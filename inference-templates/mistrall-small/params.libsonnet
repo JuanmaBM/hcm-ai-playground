@@ -10,6 +10,10 @@ local name = "mistral-small";
     model: "inference-simulator",
   },
 
+  envoy: {
+    tracing: {}
+  },
+
   serviceAccount: {
     create: false,
     automount: true,
