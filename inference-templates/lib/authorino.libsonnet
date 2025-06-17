@@ -27,18 +27,18 @@
         },
         "spec": {
             "authentication": {
-                "friends": {
+                [params.auth.apiKey.matchLabels.value]: {
                     "apiKey": {
                         "allNamespaces": false,
                         "selector": {
                             "matchLabels": {
-                                "group": "friends"
+                                [params.auth.apiKey.matchLabels.name]: params.auth.apiKey.matchLabels.value
                             }
                         }
                     },
                     "credentials": {
                         "authorizationHeader": {
-                            "prefix": "APIKEY"
+                            "prefix": params.auth.apiKey.prefix
                         }
                     },
                     "metrics": false,
@@ -60,8 +60,8 @@
                         "patterns": [
                             {
                                 "operator": "eq",
-                                "selector": "auth.identity.metadata.labels.group",
-                                "value": "friends"
+                                "selector": "auth.identity.metadata.labels." + params.auth.apiKey.matchLabels.name,
+                                "value": params.auth.apiKey.matchLabels.value
                             }
                         ]
                     },
@@ -69,8 +69,8 @@
                     "when": [
                         {
                             "operator": "eq",
-                            "selector": "auth.identity.metadata.labels.group",
-                            "value": "friends"
+                            "selector": "auth.identity.metadata.labels." + params.auth.apiKey.matchLabels.name,
+                            "value": params.auth.apiKey.matchLabels.value
                         }
                     ]
                 },

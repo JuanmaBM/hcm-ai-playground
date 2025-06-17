@@ -35,8 +35,8 @@ local _envoyConfig(params) = {
                 endpoint: {
                 address: {
                     socket_address: {
-                    address: params.name,
-                    port_value: params.service.port,
+                        address: params.name,
+                        port_value: params.service.port,
                     },
                 },
                 },

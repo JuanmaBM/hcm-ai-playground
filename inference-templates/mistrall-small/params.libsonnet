@@ -16,13 +16,13 @@ local name = "mistral-small";
 
   auth: {
     hostname: "*",
-  },
-
-  serviceAccount: {
-    create: false,
-    automount: true,
-    annotations: {},
-    name: "",
+    apiKey: {
+      matchLabels: {
+        name: "group",
+        value: "friends"
+      },
+      prefix: "APIKEY"
+    }
   },
 
   labels: {
@@ -124,7 +124,4 @@ local name = "mistral-small";
     // }
   ],
 
-  nodeSelector: {},
-
-  annotations: {},
 }
