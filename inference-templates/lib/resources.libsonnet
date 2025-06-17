@@ -6,6 +6,7 @@ local helpers = import 'helpers.libsonnet';
         kind: "Deployment",
         metadata: {
             name: params.name,
+            namespace: params.namespace,
             labels: {
             app: params.name,
             },
@@ -49,6 +50,7 @@ local helpers = import 'helpers.libsonnet';
         metadata: {
             name: params.name,
             labels: params.labels,
+            namespace: params.namespace,
         },
         spec: {
             type: params.service.type,
@@ -70,6 +72,7 @@ local helpers = import 'helpers.libsonnet';
         kind: 'Route',
         metadata: {
             name: params.name,
+            namespace: params.namespace,
         },
         spec: {
             to: {

@@ -3,6 +3,7 @@ local name = "mistral-small";
 
 {
   name: name,
+  namespace: "mistral-small",
   replicaCount: 1,
 
   inferenceService: {

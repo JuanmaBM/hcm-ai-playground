@@ -162,6 +162,7 @@ local _envoyConfig(params) = {
         apiVersion: "route.openshift.io/v1",
         metadata: {
             name: "envoy-" + params.name,
+            namespace: params.namespace
         },
         spec: {
             path: "/",
@@ -186,6 +187,7 @@ local _envoyConfig(params) = {
         kind: "Service",
         metadata: {
             name: "envoy-" + params.name,
+            namespace: params.namespace,
             labels: {
                 app: "envoy-" + params.name,
             },
@@ -209,6 +211,7 @@ local _envoyConfig(params) = {
         kind: "Deployment",
         metadata: {
             name: "envoy-" + params.name,
+            namespace: params.namespace,
             labels: {
                 app: "envoy-" + params.name,
             },
@@ -282,13 +285,14 @@ local _envoyConfig(params) = {
         apiVersion: "v1",
         kind: "ConfigMap",
         metadata: {
-        name: "envoy-" + params.name,
-        labels: {
-            app: params.name,
-        },
+            name: "envoy-" + params.name,
+            namespace: params.namespace,
+            labels: {
+                app: params.name,
+            },
         },
         data: {
-        "envoy.yaml": std.manifestYamlDoc(_envoyConfig(params)),
+            "envoy.yaml": std.manifestYamlDoc(_envoyConfig(params)),
         },
     },
 
