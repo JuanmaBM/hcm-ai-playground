@@ -1,3 +1,160 @@
+local _envoyConfig(params) = {
+    static_resources: {
+    clusters: [
+        {
+        name: "authorino",
+        connect_timeout: "0.25s",
+        type: "STRICT_DNS",
+        lb_policy: "ROUND_ROBIN",
+        http2_protocol_options: {},
+        load_assignment: {
+            cluster_name: "authorino",
+            endpoints: [{
+            lb_endpoints: [{
+                endpoint: {
+                address: {
+                    socket_address: {
+                    address: "authorino-authorino-authorization",
+                    port_value: 50051,
+                    },
+                },
+                },
+            }],
+            }],
+        },
+        },
+        {
+        name: "envoy-" + params.name,
+        connect_timeout: "0.25s",
+        type: "STRICT_DNS",
+        lb_policy: "ROUND_ROBIN",
+        load_assignment: {
+            cluster_name: "envoy-" + params.name,
+            endpoints: [{
+            lb_endpoints: [{
+                endpoint: {
+                address: {
+                    socket_address: {
+                    address: params.name,
+                    port_value: params.service.port,
+                    },
+                },
+                },
+            }],
+            }],
+        },
+        },
+    ],
+    listeners: [
+        {
+        address: {
+            socket_address: {
+            address: "0.0.0.0",
+            port_value: 8000,
+            },
+        },
+        filter_chains: [
+            {
+            filters: [
+                {
+                name: "envoy.http_connection_manager",
+                typed_config: {
+                    "@type": "type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager",
+                    stat_prefix: "local",
+                    use_remote_address: true,
+                    route_config: {
+                    name: "local_route",
+                    virtual_hosts: [
+                        {
+                        name: "local_service",
+                        domains: ["*"],
+                        routes: [
+                            {
+                            match: { prefix: "/" },
+                            route: {
+                                cluster: "envoy-" + params.name,
+                            },
+                            },
+                        ],
+                        rate_limits: [
+                            {
+                            actions: [{
+                                metadata: {
+                                metadata_key: {
+                                    key: "envoy.filters.http.ext_authz",
+                                    path: [
+                                    { key: "ext_auth_data" },
+                                    { key: "username" },
+                                    ],
+                                },
+                                descriptor_key: "user_id",
+                                },
+                            }],
+                            },
+                        ],
+                        },
+                    ],
+                    },
+                    http_filters: [
+                    {
+                        name: "envoy.filters.http.ext_authz",
+                        typed_config: {
+                            "@type": "type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthz",
+                            transport_api_version: "V3",
+                            failure_mode_allow: false,
+                            include_peer_certificate: true,
+                            grpc_service: {
+                                envoy_grpc: {
+                                cluster_name: "authorino",
+                                },
+                                timeout: "1s",
+                            },
+                        },
+                    },
+                    {
+                        name: "envoy.filters.http.ratelimit",
+                        typed_config: {
+                            "@type": "type.googleapis.com/envoy.extensions.filters.http.ratelimit.v3.RateLimit",
+                            domain: "talker-api",
+                            failure_mode_deny: false,
+                            timeout: "3s",
+                            rate_limit_service: {
+                                transport_api_version: "V3",
+                                grpc_service: {
+                                    envoy_grpc: {
+                                        cluster_name: "limitador",
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    {
+                        name: "envoy.filters.http.router",
+                        typed_config: {
+                            "@type": "type.googleapis.com/envoy.extensions.filters.http.router.v3.Router",
+                            // FIXME: 
+                            // tracing: params.envoy.tracing,
+                        },
+                    },
+                    ],
+                },
+                },
+            ],
+            },
+        ],
+        },
+    ],
+    },
+    admin: {
+        access_log_path: "/tmp/admin_access.log",
+        address: {
+            socket_address: {
+            address: "0.0.0.0",
+            port_value: 8001,
+            },
+        },
+    },
+};
 
 {
     route(params):: {
@@ -125,170 +282,14 @@
         apiVersion: "v1",
         kind: "ConfigMap",
         metadata: {
-        name: params.name,
+        name: "envoy-" + params.name,
         labels: {
             app: params.name,
         },
         },
         data: {
-        "envoy.yaml": std.manifestYamlDoc(self._envoyConfig(params)),
+        "envoy.yaml": std.manifestYamlDoc(_envoyConfig(params)),
         },
     },
 
-    _envoyConfig(params):: {
-        static_resources: {
-        clusters: [
-            {
-            name: "authorino",
-            connect_timeout: "0.25s",
-            type: "STRICT_DNS",
-            lb_policy: "ROUND_ROBIN",
-            http2_protocol_options: {},
-            load_assignment: {
-                cluster_name: "authorino",
-                endpoints: [{
-                lb_endpoints: [{
-                    endpoint: {
-                    address: {
-                        socket_address: {
-                        address: "authorino-authorino-authorization",
-                        port_value: 50051,
-                        },
-                    },
-                    },
-                }],
-                }],
-            },
-            },
-            {
-            name: "envoy-" + params.name,
-            connect_timeout: "0.25s",
-            type: "STRICT_DNS",
-            lb_policy: "ROUND_ROBIN",
-            load_assignment: {
-                cluster_name: "envoy-" + params.name,
-                endpoints: [{
-                lb_endpoints: [{
-                    endpoint: {
-                    address: {
-                        socket_address: {
-                        address: params.service.portName,
-                        port_value: params.service.port,
-                        },
-                    },
-                    },
-                }],
-                }],
-            },
-            },
-        ],
-        listeners: [
-            {
-            address: {
-                socket_address: {
-                address: "0.0.0.0",
-                port_value: 8000,
-                },
-            },
-            filter_chains: [
-                {
-                filters: [
-                    {
-                    name: "envoy.http_connection_manager",
-                    typed_config: {
-                        "@type": "type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager",
-                        stat_prefix: "local",
-                        use_remote_address: true,
-                        route_config: {
-                        name: "local_route",
-                        virtual_hosts: [
-                            {
-                            name: "local_service",
-                            domains: ["*"],
-                            routes: [
-                                {
-                                match: { prefix: "/" },
-                                route: {
-                                    cluster: "envoy-" + params.name,
-                                },
-                                },
-                            ],
-                            rate_limits: [
-                                {
-                                actions: [{
-                                    metadata: {
-                                    metadata_key: {
-                                        key: "envoy.filters.http.ext_authz",
-                                        path: [
-                                        { key: "ext_auth_data" },
-                                        { key: "username" },
-                                        ],
-                                    },
-                                    descriptor_key: "user_id",
-                                    },
-                                }],
-                                },
-                            ],
-                            },
-                        ],
-                        },
-                        http_filters: [
-                        {
-                            name: "envoy.filters.http.ext_authz",
-                            typed_config: {
-                                "@type": "type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthz",
-                                transport_api_version: "V3",
-                                failure_mode_allow: false,
-                                include_peer_certificate: true,
-                                grpc_service: {
-                                    envoy_grpc: {
-                                    cluster_name: "authorino",
-                                    },
-                                    timeout: "1s",
-                                },
-                            },
-                        },
-                        {
-                            name: "envoy.filters.http.ratelimit",
-                            typed_config: {
-                                "@type": "type.googleapis.com/envoy.extensions.filters.http.ratelimit.v3.RateLimit",
-                                domain: "talker-api",
-                                failure_mode_deny: false,
-                                timeout: "3s",
-                                rate_limit_service: {
-                                    transport_api_version: "V3",
-                                    grpc_service: {
-                                        envoy_grpc: {
-                                            cluster_name: "limitador",
-                                        },
-                                    },
-                                },
-                            },
-                        },
-                        {
-                            name: "envoy.filters.http.router",
-                            typed_config: {
-                                "@type": "type.googleapis.com/envoy.extensions.filters.http.router.v3.Router",
-                            },
-                            tracing: params.envoy.tracing,
-                        },
-                        ],
-                    },
-                    },
-                ],
-                },
-            ],
-            },
-        ],
-        },
-        admin: {
-            access_log_path: "/tmp/admin_access.log",
-            address: {
-                socket_address: {
-                address: "0.0.0.0",
-                port_value: 8001,
-                },
-            },
-        },
-    },
 }

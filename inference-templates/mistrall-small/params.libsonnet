@@ -14,6 +14,10 @@ local name = "mistral-small";
     tracing: {}
   },
 
+  auth: {
+    hostname: "*",
+  },
+
   serviceAccount: {
     create: false,
     automount: true,
@@ -26,7 +30,7 @@ local name = "mistral-small";
   },
 
   service: {
-    port: 8080,
+    port: 8081,
     type: "ClusterIP",
     portName: "mistrall-small-http",
     protocol: "TCP",
