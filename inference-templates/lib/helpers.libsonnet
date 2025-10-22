@@ -80,9 +80,14 @@
                     }
                     }
                 },
+                volumeMounts: [
+                    {
+                        name: "kserve-provision-location",
+                        mountPath: "/mnt/models",
+                    },
+                ],
                 env: params.envVars,
                 resources: params.resources,
-                volumeMounts: params.volumeMounts,
                 livenessProbe: params.livenessProbe,
                 readinessProbe: params.readinessProbe,
             }
@@ -110,7 +115,36 @@
                 readinessProbe: params.readinessProbe,
             }
         ]
-        else error "Unsupported inference type: " + type
-    
+        else error "Unsupported inference type: " + type,
+
+    volumesFor: function(type)
+        if type == "vllm" then [
+            {
+            name: "workload-socket",
+            emptyDir: {}
+            },
+            {
+            name: "credential-socket",
+            emptyDir: {}
+            },
+            {
+            name: "workload-certs",
+            emptyDir: {}
+            },
+            {
+            name: "shm",
+            emptyDir: {
+                medium: "Memory",
+                sizeLimit: "2Gi"
+            }
+            },
+            {
+            name: "kserve-provision-location",
+            emptyDir: {}
+            }
+        ]
+        else if type == "simulator" then []
+        else error "Unsupported inference type: " + type,
+
 
 }

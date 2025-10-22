@@ -7,7 +7,7 @@ local name = "mistral-small";
   replicaCount: 1,
 
   inferenceService: {
-    type: "simulator",  // or "vllm"
+    type: "simulator",  // simulator or "vllm"
     model: "inference-simulator",
   },
 
@@ -30,10 +30,21 @@ local name = "mistral-small";
     app: name,
   },
 
+  envVars: [
+    {
+      name: "HF_HOME",
+      value: "/tmp/hf_home",
+    },
+    {
+      name: "PORT",
+      value: "8081",
+    },
+  ],
+
   service: {
     port: 8081,
     type: "ClusterIP",
-    portName: "mistrall-small-http",
+    portName: "mistral-small-http",
     protocol: "TCP",
     targetPort: "http",
   },
@@ -64,65 +75,18 @@ local name = "mistral-small";
   },
 
   tolerations: [
-    // {
-    //   key: "nvidia.com/gpu",
-    //   operator: "Exists",
-    //   effect: "NoSchedule",
-    // },
-    // {
-    //   key: "nvidia-gpu-only",
-    //   operator: "Exists",
-    //   effect: "NoSchedule",
-    // },
-    // {
-    //   key: "nvidia.com/gpu",
-    //   operator: "Equal",
-    //   value: "L40S",
-    //   effect: "NoSchedule",
-    // },
+    {
+      key: "nvidia.com/gpu",
+      operator: "Exists",
+      effect: "NoSchedule",
+    },
+    {
+      key: "nvidia-gpu-only",
+      operator: "Exists",
+      effect: "NoSchedule",
+    }
   ],
 
-  affinity: {
-    // podAntiAffinity: {
-    //   preferredDuringSchedulingIgnoredDuringExecution: [
-    //     {
-    //       weight: 100,
-    //       podAffinityTerm: {
-    //         labelSelector: {
-    //           matchLabels: {
-    //           },
-    //         },
-    //         topologyKey: "kubernetes.io/hostname",
-    //       },
-    //     },
-    //   ],
-    // },
-  },
-
-  volumes: [
-    // {
-    //   name: "workload-socket",
-    //   emptyDir: {}
-    // },
-    // {
-    //   name: "credential-socket",
-    //   emptyDir: {}
-    // },
-    // {
-    //   name: "workload-certs",
-    //   emptyDir: {}
-    // },
-    // {
-    //   name: "shm",
-    //   emptyDir: {
-    //     medium: "Memory",
-    //     sizeLimit: "2Gi"
-    //   }
-    // },
-    // {
-    //   name: "kserve-provision-location",
-    //   emptyDir: {}
-    // }
-  ],
+  affinity: {},
 
 }

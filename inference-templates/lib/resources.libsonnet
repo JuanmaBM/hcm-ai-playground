@@ -37,7 +37,7 @@ local helpers = import 'helpers.libsonnet';
                     dnsPolicy: "ClusterFirst",
                     initContainers: helpers.initContainerFor(params.inferenceService.type),
                     containers: helpers.containerFor(params.inferenceService.type, params),
-                    volumes: params.volumes,
+                    volumes: helpers.volumesFor(params.inferenceService.type),
                     tolerations: params.tolerations,
                 },
             },
